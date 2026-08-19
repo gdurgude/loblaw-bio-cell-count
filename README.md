@@ -1,4 +1,4 @@
-# Loblaw Bio — Cell Count Analysis
+# Loblaw Bio-Cell Count Analysis
 
 ## Setup
 
