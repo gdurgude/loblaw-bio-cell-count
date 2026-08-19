@@ -28,18 +28,16 @@ st.caption(
 )
 
 if not os.path.exists(DB_FILE):
-    st.error(
-        f"Database file `{DB_FILE}` not found. Run `python load_data.py` "
-        "in the repository root first, then reload this page."
-    )
+    st.error("Database not found. Run `make pipeline` first.")
     st.stop()
 
 conn = A.get_connection(DB_FILE)
 
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "1. Frequency Overview",
     "2. Responders vs Non-Responders",
     "3. Baseline Subset Explorer",
+    "4. Requested Answers",
 ])
 
 # ---------------------------------------------------------------------------
@@ -199,5 +197,34 @@ with tab3:
                 px.pie(summ["by_sex"], names="sex", values="n_subjects"),
                 use_container_width=True,
             )
+
+
+# ---------------------------------------------------------------------------
+# Tab 4: explicit assignment answers
+# ---------------------------------------------------------------------------
+with tab4:
+    st.header("Requested assignment answers")
+    all_sex = A.count_subjects_by_sex(conn)
+    baseline_sex = A.baseline_subject_counts_by_sex(conn)
+    bcell = A.melanoma_male_responder_baseline_b_cell_average(conn).iloc[0]
+
+    c1, c2 = st.columns(2)
+    with c1:
+        male_all = int(all_sex.loc[all_sex["sex"].str.upper() == "M", "n_subjects"].sum())
+        female_all = int(all_sex.loc[all_sex["sex"].str.upper() == "F", "n_subjects"].sum())
+        st.metric("Male subjects — full dataset", f"{male_all:,}")
+        st.metric("Female subjects — full dataset", f"{female_all:,}")
+
+    with c2:
+        st.metric(
+            "Average B cells — melanoma males, responders, time = 0",
+            f"{float(bcell['average_b_cells']):,.2f}",
+        )
+        st.caption(
+            f"All sample and treatment types; raw B-cell counts; n={int(bcell['n_samples'])} samples."
+        )
+
+    st.subheader("Baseline miraclib / melanoma / PBMC cohort")
+    st.dataframe(baseline_sex, use_container_width=True, hide_index=True)
 
 conn.close()

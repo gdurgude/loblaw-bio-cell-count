@@ -250,3 +250,67 @@ def summarize_baseline_subset(conn=None):
     )
 
     return {"by_project": by_project, "by_response": by_response, "by_sex": by_sex, "subset": subset}
+
+
+# ---------------------------------------------------------------------------
+# Submission-specific requested answers
+# ---------------------------------------------------------------------------
+
+def count_subjects_by_sex(conn=None):
+    """Count unique subjects by recorded sex across the full dataset."""
+    own_conn = conn is None
+    conn = conn or get_connection()
+    result = pd.read_sql_query(
+        """
+        SELECT sex, COUNT(*) AS n_subjects
+        FROM subjects
+        WHERE sex IS NOT NULL AND TRIM(sex) <> ''
+        GROUP BY sex
+        ORDER BY sex
+        """,
+        conn,
+    )
+    if own_conn:
+        conn.close()
+    return result
+
+
+def baseline_subject_counts_by_sex(conn=None):
+    """Count unique subjects by sex in the Part 4 baseline cohort."""
+    subset = get_baseline_miraclib_melanoma_pbmc_samples(conn)
+    return (
+        subset.drop_duplicates("subject_id")
+        .groupby("sex")["subject_id"]
+        .count()
+        .rename("n_subjects")
+        .reset_index()
+        .sort_values("sex")
+    )
+
+
+def melanoma_male_responder_baseline_b_cell_average(conn=None):
+    """
+    Requested calculation:
+    melanoma + male + responder + time=0, across all sample and treatment
+    types. Returns the arithmetic mean of the raw b_cell count.
+    """
+    own_conn = conn is None
+    conn = conn or get_connection()
+    result = pd.read_sql_query(
+        """
+        SELECT AVG(cc.count) AS average_b_cells, COUNT(*) AS n_samples
+        FROM cell_counts cc
+        JOIN samples s ON s.sample_id = cc.sample_id
+        JOIN subjects sub ON sub.subject_id = s.subject_id
+        WHERE LOWER(sub.condition) = 'melanoma'
+          AND UPPER(sub.sex) = 'M'
+          AND LOWER(sub.response) = 'yes'
+          AND s.time_from_treatment_start = 0
+          AND cc.population = 'b_cell'
+        """,
+        conn,
+    )
+    if own_conn:
+        conn.close()
+    result["average_b_cells"] = result["average_b_cells"].round(2)
+    return result

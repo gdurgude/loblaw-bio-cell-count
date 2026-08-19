@@ -1,0 +1,6 @@
+metric,value,calculation_note
+full_dataset_male_subjects,1810,
+full_dataset_female_subjects,1690,
+baseline_miraclib_melanoma_pbmc_male_subjects,344,
+baseline_miraclib_melanoma_pbmc_female_subjects,312,
+melanoma_male_responders_time0_average_b_cells,10206.15,n=485 baseline samples; all sample/treatment types
