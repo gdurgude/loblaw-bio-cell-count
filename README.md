@@ -18,7 +18,7 @@ make dashboard
 
 No manual database initialization or Python script execution is required.
 
-## Repository structure
+## Repository structure:
 
 ```text
 .
